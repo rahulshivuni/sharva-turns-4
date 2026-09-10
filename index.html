@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Superhero Birthday Bash — RSVP</title>
+    <meta
+      name="description"
+      content="Join us for a Superhero Birthday Bash! RSVP with your name and how many kids are coming."
+    />
+    <link rel="icon" href="hero.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bangers&family=Luckiest+Guy&family=Nunito:wght@600;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="sky" aria-hidden="true">
+      <div class="sunburst"></div>
+      <div class="speed-lines"></div>
+      <div class="halftone"></div>
+      <div class="stars"></div>
+      <div class="cloud cloud-a"></div>
+      <div class="cloud cloud-b"></div>
+      <div class="cloud cloud-c"></div>
+    </div>
+
+    <header class="top-banner">
+      <p class="top-banner__kicker">You are invited</p>
+      <h1 id="headline">I'm Turning 4</h1>
+    </header>
+
+    <main class="layout">
+      <section class="poster-wrap">
+        <div class="poster-frame">
+          <img
+            class="poster"
+            src="hero.jpg"
+            alt="Superhero birthday invitation: a little hero in a blue and red cape standing on a city rooftop, turning 4."
+          />
+        </div>
+      </section>
+
+      <section class="rsvp-panel" aria-labelledby="rsvp-title">
+        <div class="burst-badge" aria-hidden="true">
+          <span>RSVP</span>
+        </div>
+        <p class="panel-kicker" id="tagline">Join us for a Superhero Birthday Bash!</p>
+        <h2 id="rsvp-title">Are you in, hero?</h2>
+        <p class="event-meta" id="event-meta"></p>
+
+        <form id="rsvp-form" novalidate>
+          <div class="name-row">
+            <label class="field">
+              <span>First name</span>
+              <input
+                id="first-name"
+                name="firstName"
+                type="text"
+                autocomplete="given-name"
+                placeholder="First name"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>Last name</span>
+              <input
+                id="last-name"
+                name="lastName"
+                type="text"
+                autocomplete="family-name"
+                placeholder="Last name"
+                required
+              />
+            </label>
+          </div>
+
+          <fieldset class="choice-row">
+            <legend>Can you make it?</legend>
+            <div class="choice-buttons">
+              <button type="button" class="choice choice--yes" data-answer="yes" aria-pressed="false">
+                YES
+              </button>
+              <button type="button" class="choice choice--no" data-answer="no" aria-pressed="false">
+                NO
+              </button>
+            </div>
+          </fieldset>
+
+          <div class="kids-block" id="kids-block" hidden>
+            <p class="kids-label">Number of kids</p>
+            <div class="stepper">
+              <button type="button" id="kids-minus" aria-label="Fewer kids">−</button>
+              <input
+                id="kids-count"
+                name="kids"
+                type="number"
+                min="0"
+                max="12"
+                value="1"
+                inputmode="numeric"
+              />
+              <button type="button" id="kids-plus" aria-label="More kids">+</button>
+            </div>
+          </div>
+
+          <p class="form-error" id="form-error" role="alert" hidden></p>
+          <div class="duplicate-alert" id="duplicate-alert" role="alert" hidden>
+            <p class="duplicate-alert__bang">ZAP!</p>
+            <p class="duplicate-alert__copy" id="duplicate-copy"></p>
+          </div>
+          <button type="submit" class="submit-btn">Send My RSVP</button>
+          <p class="form-hint">Your name will appear on the attending heroes list.</p>
+        </form>
+
+        <div class="success-card" id="success-card" hidden>
+          <p class="pow" aria-hidden="true">POW!</p>
+          <h3 id="success-title">You're on the team!</h3>
+          <p id="success-copy"></p>
+        </div>
+      </section>
+    </main>
+
+    <section class="roster" aria-labelledby="roster-title">
+      <div class="roster-head">
+        <div>
+          <p class="panel-kicker">Mission roster</p>
+          <h2 id="roster-title">Attending Heroes</h2>
+        </div>
+        <div class="counts" id="counts">
+          <div class="count-chip">
+            <strong id="family-count">0</strong>
+            <span>Families</span>
+          </div>
+          <div class="count-chip">
+            <strong id="kid-count">0</strong>
+            <span>Kids</span>
+          </div>
+        </div>
+      </div>
+      <ul class="hero-list" id="hero-list"></ul>
+      <p class="empty-roster" id="empty-roster">Be the first superhero to RSVP!</p>
+    </section>
+
+    <p class="celebrate" id="celebrate">Join us to celebrate our little superhero!</p>
+
+    <div class="cityscape" aria-hidden="true">
+      <svg viewBox="0 0 1440 220" preserveAspectRatio="none">
+        <path
+          fill="#071230"
+          d="M0 220V110h40v-40h30v40h20V60h50v70h25V80h40v40h30V50h55v80h20V90h45v50h35V70h60v60h25V40h70v90h40V80h50v50h30V100h40v40h25V60h80v80h35V90h55v50h40V70h60v80h20V110h40v40h30V80h70v70h25V100h50v50h40V90h35v60h20V120h40v100z"
+        />
+        <g fill="#ffd400">
+          <rect x="58" y="90" width="6" height="8" />
+          <rect x="72" y="90" width="6" height="8" />
+          <rect x="130" y="78" width="6" height="8" />
+          <rect x="220" y="68" width="6" height="8" />
+          <rect x="310" y="92" width="6" height="8" />
+          <rect x="410" y="58" width="6" height="8" />
+          <rect x="520" y="100" width="6" height="8" />
+          <rect x="640" y="88" width="6" height="8" />
+          <rect x="760" y="70" width="6" height="8" />
+          <rect x="880" y="96" width="6" height="8" />
+          <rect x="990" y="78" width="6" height="8" />
+          <rect x="1110" y="100" width="6" height="8" />
+          <rect x="1230" y="86" width="6" height="8" />
+          <rect x="1340" y="110" width="6" height="8" />
+        </g>
+      </svg>
+    </div>
+
+    <div class="pow-overlay" id="pow-overlay" hidden>KA-POW!</div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
