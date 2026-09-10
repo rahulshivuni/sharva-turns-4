@@ -226,8 +226,13 @@ function boom(label = "KA-POW!") {
   );
 }
 
+function isLocalHost() {
+  const host = location.hostname;
+  return host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "::1";
+}
+
 async function notifyHost(guest) {
-  if (!party.hostEmail) return;
+  if (!party.hostEmail || isLocalHost()) return;
   try {
     await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(party.hostEmail)}`, {
       method: "POST",
