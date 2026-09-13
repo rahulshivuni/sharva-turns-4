@@ -281,6 +281,23 @@ body {
   color: var(--blue-deep);
 }
 
+.event-meta p {
+  margin: 0;
+}
+
+.event-meta__venue {
+  margin-top: 6px;
+  font-family: Bangers, cursive;
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+  color: var(--red);
+}
+
+.event-meta__address {
+  margin-top: 2px;
+  font-size: 0.95rem;
+}
+
 .name-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

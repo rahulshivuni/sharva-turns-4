@@ -4,7 +4,8 @@ window.PARTY = {
   celebrate: "OUR LITTLE SUPERHERO",
   date: "September 19, 2026",
   time: "5:00 PM",
-  place: "Go Play!, Location: 21 Meadow Cir Dr #308, Lake St Louis, MO 63367",
+  place: "Go Play!",
+  address: "21 Meadow Cir Dr #308, Lake St. Louis, MO 63367",
   hostEmail: "rahul.shivuni@gmail.com",
   // Create a free pantry at https://getpantry.cloud and paste the ID here
   // so every friend who opens the GitHub Pages link shares one guest list.

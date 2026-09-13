@@ -95,10 +95,33 @@ function fillPartyCopy() {
   document.getElementById("celebrate").textContent =
     `Join us to celebrate ${party.celebrate || "our little superhero"}!`;
 
-  const details = [party.date, party.time, party.place].filter(
-    (value) => value && !value.toLowerCase().startsWith("add your")
-  );
-  document.getElementById("event-meta").textContent = details.join(" • ");
+  const isPlaceholder = (value) =>
+    !value || value.toLowerCase().startsWith("add your");
+  const when = [party.date, party.time].filter((value) => !isPlaceholder(value));
+  const venue = [party.place, party.address].filter((value) => !isPlaceholder(value));
+  const meta = document.getElementById("event-meta");
+  meta.replaceChildren();
+
+  if (when.length) {
+    const whenLine = document.createElement("p");
+    whenLine.className = "event-meta__when";
+    whenLine.textContent = when.join(" • ");
+    meta.appendChild(whenLine);
+  }
+
+  if (venue.length) {
+    const venueLine = document.createElement("p");
+    venueLine.className = "event-meta__venue";
+    venueLine.textContent = venue[0];
+    meta.appendChild(venueLine);
+
+    if (venue[1]) {
+      const addressLine = document.createElement("p");
+      addressLine.className = "event-meta__address";
+      addressLine.textContent = venue[1];
+      meta.appendChild(addressLine);
+    }
+  }
 }
 
 function setAnswer(answer) {
