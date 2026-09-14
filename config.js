@@ -7,5 +7,10 @@ window.PARTY = {
   place: "Go Play!",
   address: "21 Meadow Cir Dr #308, Lake St. Louis, MO 63367",
   hostEmail: "rahul.shivuni@gmail.com",
-  kvdbBucket: "JWX3ohSH2quJMFfjdnoXJo",
+  pantryId: "a794df72-5112-4738-9ef9-4b12bdd2fea5",
+  pantryBasket: "rsvps",
+  guests: [
+    // Add any RSVPs from email here if they are missing from the site:
+    // { firstName: "Priya", lastName: "Patel", attending: true, kids: 2 },
+  ],
 };

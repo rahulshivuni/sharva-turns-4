@@ -18,18 +18,9 @@ const choiceButtons = [...document.querySelectorAll(".choice")];
 
 let selectedAnswer = "";
 
-function cloudBucket() {
-  return (party.kvdbBucket || "").trim();
-}
-
-function cloudUrl(path = "") {
-  const bucket = cloudBucket();
-  if (!bucket) return "";
-  return `https://kvdb.io/${encodeURIComponent(bucket)}/${path}`;
-}
-
-function guestCloudKey(guest) {
-  return `g-${nameKey(guest).replace(/[^a-z0-9]+/g, "-")}`;
+function pantryUrl() {
+  if (!party.pantryId) return "";
+  return `https://getpantry.cloud/apiv1/pantry/${party.pantryId}/basket/${party.pantryBasket || "rsvps"}`;
 }
 
 function readLocal() {
@@ -45,58 +36,67 @@ function writeLocal(guests) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(guests));
 }
 
-function parseCloudGuest(value) {
-  if (!value) return null;
-  if (typeof value === "object") return value;
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch {
-    return null;
-  }
+function configGuests() {
+  return Array.isArray(party.guests) ? party.guests.filter((guest) => guest && guest.firstName) : [];
+}
+
+function mergeGuests(...lists) {
+  const map = new Map();
+  lists.flat().forEach((guest) => {
+    if (!guest || !guest.firstName) return;
+    map.set(nameKey(guest), guest);
+  });
+  return [...map.values()];
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function readCloud() {
-  const url = cloudUrl("?values=true&format=json");
+  const url = pantryUrl();
   if (!url) return null;
   const res = await fetch(url);
-  if (res.status === 404) return [];
+  if (res.status === 400 || res.status === 404) return [];
   if (!res.ok) throw new Error("Could not load the guest list.");
-  const rows = await res.json();
-  if (!Array.isArray(rows)) return [];
-  return rows
-    .map((row) => {
-      if (Array.isArray(row)) return parseCloudGuest(row[1]);
-      return parseCloudGuest(row);
-    })
-    .filter((guest) => guest && guest.firstName);
+  const data = await res.json();
+  return mergeGuests(Array.isArray(data.guests) ? data.guests : []);
 }
 
 async function writeCloudGuest(guest) {
-  const url = cloudUrl(`${guestCloudKey(guest)}?ttl=604800`);
+  const url = pantryUrl();
   if (!url) return;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: JSON.stringify(guest),
-  });
-  if (!res.ok) {
-    const detail = (await res.text()).slice(0, 120);
-    throw new Error(detail || "Could not save the guest list.");
+  let lastError;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guests: [guest] }),
+      });
+      if (res.ok) return;
+      lastError = new Error("Could not save the guest list.");
+    } catch (error) {
+      lastError = error;
+    }
+    await delay(1500 * (attempt + 1));
   }
+  throw lastError || new Error("Could not save the guest list.");
 }
 
 async function loadGuests() {
+  const seeded = configGuests();
   try {
     const cloud = await readCloud();
     if (cloud) {
-      writeLocal(cloud);
-      return cloud;
+      const merged = mergeGuests(seeded, cloud);
+      writeLocal(merged);
+      return merged;
     }
   } catch (error) {
     console.warn(error);
   }
-  return readLocal();
+  return mergeGuests(seeded, readLocal());
 }
 
 function fillPartyCopy() {
@@ -284,9 +284,8 @@ async function notifyHost(guest) {
 }
 
 function showSetupNote() {
-  if (cloudBucket()) return;
   const wantsSetup = new URLSearchParams(location.search).has("setup");
-  if (!wantsSetup) return;
+  if (!wantsSetup || pantryUrl()) return;
 }
 
 choiceButtons.forEach((button) => {
@@ -357,6 +356,13 @@ form.addEventListener("submit", async (event) => {
       saved = true;
     } catch (error) {
       console.warn(error);
+    }
+    if (!saved) {
+      [4000, 12000, 25000].forEach((wait) => {
+        setTimeout(() => {
+          writeCloudGuest(guest).catch(() => {});
+        }, wait);
+      });
     }
     if (!emailed && !saved && !isLocalHost()) {
       throw new Error("The signal got jammed. Try again in a moment.");
