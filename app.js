@@ -18,9 +18,18 @@ const choiceButtons = [...document.querySelectorAll(".choice")];
 
 let selectedAnswer = "";
 
-function pantryUrl() {
-  if (!party.pantryId) return "";
-  return `https://getpantry.cloud/apiv1/pantry/${party.pantryId}/basket/${party.pantryBasket || "rsvps"}`;
+function cloudBucket() {
+  return (party.kvdbBucket || "").trim();
+}
+
+function cloudUrl(path = "") {
+  const bucket = cloudBucket();
+  if (!bucket) return "";
+  return `https://kvdb.io/${encodeURIComponent(bucket)}/${path}`;
+}
+
+function guestCloudKey(guest) {
+  return `g-${nameKey(guest).replace(/[^a-z0-9]+/g, "-")}`;
 }
 
 function readLocal() {
@@ -36,37 +45,44 @@ function writeLocal(guests) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(guests));
 }
 
-async function readCloud() {
-  const url = pantryUrl();
-  if (!url) return null;
-  const res = await fetch(url);
-  if (res.status === 400 || res.status === 404) {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guests: [] }),
-    });
-    return [];
+function parseCloudGuest(value) {
+  if (!value) return null;
+  if (typeof value === "object") return value;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
   }
-  if (!res.ok) throw new Error("Could not load the guest list.");
-  const data = await res.json();
-  return Array.isArray(data.guests) ? data.guests : [];
 }
 
-async function writeCloud(guests) {
-  const url = pantryUrl();
+async function readCloud() {
+  const url = cloudUrl("?values=true&format=json");
+  if (!url) return null;
+  const res = await fetch(url);
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error("Could not load the guest list.");
+  const rows = await res.json();
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((row) => {
+      if (Array.isArray(row)) return parseCloudGuest(row[1]);
+      return parseCloudGuest(row);
+    })
+    .filter((guest) => guest && guest.firstName);
+}
+
+async function writeCloudGuest(guest) {
+  const url = cloudUrl(`${guestCloudKey(guest)}?ttl=604800`);
   if (!url) return;
   const res = await fetch(url, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ guests }),
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: JSON.stringify(guest),
   });
   if (!res.ok) {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guests }),
-    });
+    const detail = (await res.text()).slice(0, 120);
+    throw new Error(detail || "Could not save the guest list.");
   }
 }
 
@@ -81,11 +97,6 @@ async function loadGuests() {
     console.warn(error);
   }
   return readLocal();
-}
-
-async function saveGuests(guests) {
-  writeLocal(guests);
-  await writeCloud(guests);
 }
 
 function fillPartyCopy() {
@@ -255,38 +266,27 @@ function isLocalHost() {
 }
 
 async function notifyHost(guest) {
-  if (!party.hostEmail || isLocalHost()) return;
-  try {
-    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(party.hostEmail)}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        _subject: `Birthday RSVP: ${fullName(guest)} said ${guest.attending ? "YES" : "NO"}`,
-        name: fullName(guest),
-        firstName: guest.firstName,
-        lastName: guest.lastName,
-        attending: guest.attending ? "YES" : "NO",
-        kids: guest.attending ? guest.kids : 0,
-      }),
-    });
-  } catch (error) {
-    console.warn(error);
-  }
+  if (!party.hostEmail || isLocalHost()) return false;
+  const data = new FormData();
+  data.append("_subject", `Birthday RSVP: ${fullName(guest)} said ${guest.attending ? "YES" : "NO"}`);
+  data.append("name", fullName(guest));
+  data.append("firstName", guest.firstName);
+  data.append("lastName", guest.lastName);
+  data.append("attending", guest.attending ? "YES" : "NO");
+  data.append("kids", String(guest.attending ? guest.kids : 0));
+  const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(party.hostEmail)}`, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    body: data,
+  });
+  if (!res.ok) throw new Error("Could not email the host.");
+  return true;
 }
 
 function showSetupNote() {
+  if (cloudBucket()) return;
   const wantsSetup = new URLSearchParams(location.search).has("setup");
-  if (!wantsSetup || pantryUrl()) return;
-  const note = document.createElement("p");
-  note.className = "form-hint";
-  note.innerHTML =
-    "Host setup: create a free pantry at " +
-    '<a href="https://getpantry.cloud" target="_blank" rel="noreferrer">getpantry.cloud</a> ' +
-    "and paste the pantry ID into <code>config.js</code> so every friend shares one guest list.";
-  form.appendChild(note);
+  if (!wantsSetup) return;
 }
 
 choiceButtons.forEach((button) => {
@@ -343,8 +343,25 @@ form.addEventListener("submit", async (event) => {
     }
 
     guests.push(guest);
-    await saveGuests(guests);
-    notifyHost(guest);
+    writeLocal(guests);
+
+    let emailed = false;
+    let saved = false;
+    try {
+      emailed = Boolean(await notifyHost(guest));
+    } catch (error) {
+      console.warn(error);
+    }
+    try {
+      await writeCloudGuest(guest);
+      saved = true;
+    } catch (error) {
+      console.warn(error);
+    }
+    if (!emailed && !saved && !isLocalHost()) {
+      throw new Error("The signal got jammed. Try again in a moment.");
+    }
+
     renderGuests(guests);
 
     form.hidden = true;
