@@ -10,7 +10,6 @@ window.PARTY = {
   pantryId: "a794df72-5112-4738-9ef9-4b12bdd2fea5",
   pantryBasket: "rsvps",
   guests: [
-    // Add any RSVPs from email here if they are missing from the site:
-    // { firstName: "Priya", lastName: "Patel", attending: true, kids: 2 },
+    { firstName: "Rahul", lastName: "Shivuni", attending: true, kids: 1 },
   ],
 };
