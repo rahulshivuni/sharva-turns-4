@@ -11,5 +11,6 @@ window.PARTY = {
   pantryBasket: "rsvps",
   guests: [
     { firstName: "Rahul", lastName: "Shivuni", attending: true, kids: 1 },
+    { firstName: "Rohith", lastName: "Sagundavena", attending: true, kids: 2 },
   ],
 };
